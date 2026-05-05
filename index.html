@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stock Dashboard</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700&display=swap');
+
+    :root {
+      --bg: #0d0f14;
+      --surface: #13161e;
+      --border: #1e2330;
+      --text: #e8eaf2;
+      --muted: #5a6080;
+      --green: #00e396;
+      --red: #ff4560;
+      --accent: #5c73f2;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 2.5rem;
+    }
+
+    header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+    header span { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--muted); }
+
+    .search-bar {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .search-bar input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.85rem;
+      padding: 0.6rem 1rem;
+      width: 160px;
+      text-transform: uppercase;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-bar input:focus { border-color: var(--accent); }
+    .search-bar input::placeholder { color: var(--muted); text-transform: none; }
+
+    .search-bar button {
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.6rem 1.2rem;
+      transition: opacity 0.2s;
+    }
+    .search-bar button:hover { opacity: 0.85; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .card:hover { border-color: #2e3550; }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .ticker {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .company {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 2px;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .remove-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: color 0.2s;
+    }
+    .remove-btn:hover { color: var(--red); }
+
+    .price {
+      font-size: 1.8rem;
+      font-weight: 700;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: -0.02em;
+    }
+
+    .change {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin-top: 4px;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .change.up   { background: rgba(0,227,150,0.1); color: var(--green); }
+    .change.down { background: rgba(255,69,96,0.1);  color: var(--red); }
+
+    .meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin-top: 1.2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .meta-item label {
+      display: block;
+      font-size: 0.65rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 2px;
+    }
+
+    .meta-item span {
+      font-size: 0.82rem;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .status {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      margin-top: 0.4rem;
+    }
+    .status.loading { color: var(--accent); }
+    .status.error   { color: var(--red); }
+
+    .empty-state {
+      grid-column: 1/-1;
+      text-align: center;
+      padding: 3rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .tag {
+      position: absolute;
+      top: 0; right: 0;
+      width: 4px;
+      height: 100%;
+      border-radius: 0 12px 12px 0;
+    }
+    .tag.up   { background: var(--green); }
+    .tag.down { background: var(--red); }
+
+    @media (max-width: 480px) {
+      body { padding: 1rem; }
+      .price { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📈 Stock Dashboard</h1>
+  <span id="last-updated">—</span>
+</header>
+
+<div class="search-bar">
+  <input type="text" id="ticker-input" placeholder="Add ticker (e.g. AAPL)" maxlength="10" />
+  <button onclick="addTicker()">Add</button>
+</div>
+
+<div class="grid" id="grid">
+  <div class="empty-state">Loading your stocks…</div>
+</div>
+
+<script>
+  const DEFAULT_TICKERS = ['AAPL', 'MSFT', 'NVDA', 'GOOGL'];
+  let watchlist = JSON.parse(localStorage.getItem('watchlist') || 'null') || DEFAULT_TICKERS;
+
+  function fmt(n) {
+    if (n == null || isNaN(n)) return '—';
+    return Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function fmtLarge(n) {
+    if (!n) return '—';
+    if (n >= 1e12) return (n / 1e12).toFixed(2) + 'T';
+    if (n >= 1e9)  return (n / 1e9).toFixed(2)  + 'B';
+    if (n >= 1e6)  return (n / 1e6).toFixed(2)  + 'M';
+    return n.toLocaleString();
+  }
+
+  function save() {
+    localStorage.setItem('watchlist', JSON.stringify(watchlist));
+  }
+
+  function renderEmpty() {
+    document.getElementById('grid').innerHTML =
+      '<div class="empty-state">No stocks added yet. Search for a ticker above.</div>';
+  }
+
+  async function fetchQuote(symbol) {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Not found');
+    const data = await res.json();
+    const q = data?.chart?.result?.[0];
+    if (!q) throw new Error('No data');
+    const meta = q.meta;
+    return {
+      symbol: meta.symbol,
+      name: meta.shortName || meta.symbol,
+      price: meta.regularMarketPrice,
+      prev: meta.chartPreviousClose,
+      open: meta.regularMarketOpen,
+      high: meta.regularMarketDayHigh,
+      low: meta.regularMarketDayLow,
+      volume: meta.regularMarketVolume,
+      mktCap: meta.marketCap,
+    };
+  }
+
+  function cardHTML(symbol) {
+    return `
+      <div class="card" id="card-${symbol}">
+        <div class="tag" id="tag-${symbol}"></div>
+        <div class="card-header">
+          <div>
+            <div class="ticker">${symbol}</div>
+            <div class="company" id="name-${symbol}">Loading…</div>
+          </div>
+          <button class="remove-btn" onclick="removeTicker('${symbol}')" title="Remove">✕</button>
+        </div>
+        <div class="price" id="price-${symbol}">—</div>
+        <div class="status loading" id="status-${symbol}">Fetching…</div>
+        <div class="meta">
+          <div class="meta-item"><label>Open</label><span id="open-${symbol}">—</span></div>
+          <div class="meta-item"><label>Prev Close</label><span id="prev-${symbol}">—</span></div>
+          <div class="meta-item"><label>High</label><span id="high-${symbol}">—</span></div>
+          <div class="meta-item"><label>Low</label><span id="low-${symbol}">—</span></div>
+          <div class="meta-item"><label>Volume</label><span id="vol-${symbol}">—</span></div>
+          <div class="meta-item"><label>Mkt Cap</label><span id="cap-${symbol}">—</span></div>
+        </div>
+      </div>`;
+  }
+
+  async function loadCard(symbol) {
+    try {
+      const q = await fetchQuote(symbol);
+      const change = q.price - q.prev;
+      const pct = (change / q.prev) * 100;
+      const up = change >= 0;
+      const dir = up ? 'up' : 'down';
+      const arrow = up ? '▲' : '▼';
+
+      document.getElementById(`name-${symbol}`).textContent = q.name;
+      document.getElementById(`price-${symbol}`).textContent = '$' + fmt(q.price);
+      document.getElementById(`open-${symbol}`).textContent = '$' + fmt(q.open);
+      document.getElementById(`prev-${symbol}`).textContent = '$' + fmt(q.prev);
+      document.getElementById(`high-${symbol}`).textContent = '$' + fmt(q.high);
+      document.getElementById(`low-${symbol}`).textContent  = '$' + fmt(q.low);
+      document.getElementById(`vol-${symbol}`).textContent  = fmtLarge(q.volume);
+      document.getElementById(`cap-${symbol}`).textContent  = fmtLarge(q.mktCap);
+      document.getElementById(`tag-${symbol}`).className = `tag ${dir}`;
+
+      const statusEl = document.getElementById(`status-${symbol}`);
+      statusEl.className = `change ${dir}`;
+      statusEl.textContent = `${arrow} $${fmt(Math.abs(change))} (${pct.toFixed(2)}%)`;
+    } catch (e) {
+      document.getElementById(`status-${symbol}`).className = 'status error';
+      document.getElementById(`status-${symbol}`).textContent = 'Error loading data';
+    }
+  }
+
+  function renderGrid() {
+    const grid = document.getElementById('grid');
+    if (!watchlist.length) { renderEmpty(); return; }
+    grid.innerHTML = watchlist.map(cardHTML).join('');
+    watchlist.forEach(loadCard);
+    document.getElementById('last-updated').textContent =
+      'Updated ' + new Date().toLocaleTimeString();
+  }
+
+  function addTicker() {
+    const input = document.getElementById('ticker-input');
+    const sym = input.value.trim().toUpperCase();
+    if (!sym) return;
+    if (watchlist.includes(sym)) { input.value = ''; return; }
+    watchlist.push(sym);
+    save();
+    input.value = '';
+    renderGrid();
+  }
+
+  function removeTicker(sym) {
+    watchlist = watchlist.filter(s => s !== sym);
+    save();
+    renderGrid();
+  }
+
+  document.getElementById('ticker-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addTicker();
+  });
+
+  renderGrid();
+  setInterval(renderGrid, 60000); // auto-refresh every 60s
+</script>
+
+</body>
+</html>
